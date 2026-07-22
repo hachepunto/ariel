@@ -83,9 +83,9 @@ process ExprClusters {
 
   input:
     path runSampleSheet
-    val SalmonCollect
+    path SalmonCollect
     path tablaGenesReferencia
-    path tablaTPM	
+    path tablaTPM
 
   output:
     path("log2tpm_CRLF2_3_clusters.tsv"), emit: clusters
@@ -93,14 +93,12 @@ process ExprClusters {
     path("*png")
 
   script:
+  salmoncsv = SalmonCollect.join(',')
   """
     export TMPDIR=\$PWD
 
-    # filtra caracteres para que preExprCluster.R pueda leer las rutas
-    salmoncsv=\$(echo ${SalmonCollect} | tr -d ' ' | tr -d '[' | tr -d ']')
-
     # ejecuta preExprCluster para obtener la tabla de tpms
-    preExprCluster.R \${salmoncsv} ${tablaGenesReferencia} ${tablaTPM}    
+    preExprCluster.R ${salmoncsv} ${tablaGenesReferencia} ${tablaTPM}
 
     # ejecuta kmeans con los genes CRLF2 y DUX4
     kmeans.R ${runSampleSheet} tpm.tsv  CRLF2 3
