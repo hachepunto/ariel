@@ -45,6 +45,7 @@ hallazgos_crlf2 <- c(
 #   1. Supporting_reads >= 10
 #   2. If called by cicero, medal > 2
 #   3. No NAs in either gene of the fusion name
+#   4. If only called by arriba, confidence must not be "low"
 
 hallazgos_fusiones <- fusiones_otras |>
   filter(
@@ -55,10 +56,12 @@ hallazgos_fusiones <- fusiones_otras |>
     Supporting_reads >= 10,
     # Cicero medal filter: only applies when cicero called the fusion
     !grepl("cicero", Metodos, ignore.case = TRUE) | (Cicero_medal > 2),
+    # Arriba confidence filter: only applies when arriba is the sole caller
+    Metodos != "Arriba" | !grepl("^low$", coalesce(Arriba_confidence, ""), ignore.case = TRUE),
     # Remove fusions where any database annotates them as fully overlapping genes
     !grepl("fully_overlapping", coalesce(annotations, ""), ignore.case = TRUE)
   ) |>
-  select(-Supporting_reads, -Cicero_medal, -annotations) |>
+  select(-Supporting_reads, -Cicero_medal, -Arriba_confidence, -annotations) |>
   mutate(
     # Merge subtype columns: combine when both are informative, otherwise keep whichever has a value
     Subtipo = case_when(
