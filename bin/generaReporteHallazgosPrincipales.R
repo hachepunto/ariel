@@ -214,7 +214,8 @@ fusiones_otras <- hallazgos_annotated |>
   filter(!es_principal) |>
   mutate(
     Cicero_medal      = str_extract(additional_info, "(?<=medal=)\\d+") |> as.integer(),
-    Arriba_confidence = str_extract(additional_info, "(?<=arriba:[^|]*confidence=)\\w+")
+    Arriba_confidence = str_extract(additional_info, "arriba:[^|]*") |>
+                         str_extract("(?<=confidence=)\\w+")
   ) |>
   select(
     Muestra          = Sample,
