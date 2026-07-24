@@ -64,16 +64,17 @@ process ExprClusters {
    *
    *  Input:
    *	- runSampleSheet (path): Directorio con las rutas de las muestras.
-   *	- SalmonCollect (val): Lista con las rutas de los archivos de cuantificacion de Salmon.
+   *	- SalmonCollect (path): Archivos de cuantificacion de Salmon.
    *	- tablaGenesReferencia (path): Tabla con el gene id y ensembl id para poder unir la tabla generada de Salmon collect y tablaTPM.
-   *    - tablaTPM (path): Tabla de TPMs de muestras de un panel de genes.   
+   *    - tablaTPM (path): Tabla de TPMs de muestras de un panel de genes.
    *
    *  Output:
    *  	- log2tpm_CRLF2_3_clusters.tsv (path): matriz transformada a log(TPM + 1)
    *	- log2tpm_{gen}_{k}_clusters.tsv (path): tabla con: Sample, expresion y cluster
    *	- boxplot_{gen}.png (path): boxplot con expresion por cluster.
-   *	- boxplot_nombres_{gen}: boxplot con nombre de las muestras seleccionadas. 
-   *  
+   *	- boxplot_nombres_{gen}: boxplot con nombre de las muestras seleccionadas.
+   *	- txExprTable.tsv (path): expresion a nivel de transcripto, con gene_id y gene_name.
+   *
    */
   cache 'lenient'
   publishDir params.resultsDir+"/ExprClusters", mode: 'copy'
@@ -91,6 +92,7 @@ process ExprClusters {
     path("log2tpm_CRLF2_3_clusters.tsv"), emit: clusters
     path("*tpm.tsv")
     path("*png")
+    path("txExprTable.tsv")
 
   script:
   salmoncsv = SalmonCollect.join(',')

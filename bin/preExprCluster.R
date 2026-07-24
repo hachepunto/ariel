@@ -22,13 +22,38 @@ names(files) <- nombres
 archivoRef <- read.table(args[2], sep = "\t", header = TRUE)
 tx2gene    <- archivoRef[, c("transcript_id", "gene_id")]
 
-txi <- tximport(files,
-                type          = "salmon",
-                tx2gene       = tx2gene,
-                ignoreTxVersion = TRUE,
-                dropInfReps   = TRUE)
+# Import at transcript level first, then summarize to gene level, so both
+# resolutions are available from the same quantification.
+txi_tx <- tximport(files,
+                   type            = "salmon",
+                   txOut           = TRUE,
+                   ignoreTxVersion = TRUE,
+                   dropInfReps     = TRUE)
+
+txi <- summarizeToGene(txi_tx, tx2gene = tx2gene, ignoreTxVersion = TRUE)
 
 table.out <- txi$abundance
+
+# Transcript-level abundance annotated with gene id and gene name
+tx_annot <- unique(archivoRef[, c("transcript_id", "gene_id", "gene_name")])
+tx_annot$transcript_id_clean <- sub("\\..*", "", tx_annot$transcript_id)
+
+tx.table.out <- as.data.frame(txi_tx$abundance)
+tx.table.out$transcript_id       <- rownames(tx.table.out)
+tx.table.out$transcript_id_clean <- sub("\\..*", "", tx.table.out$transcript_id)
+
+tx.table.out <- merge(tx_annot[, c("transcript_id_clean", "gene_id", "gene_name")],
+                       tx.table.out,
+                       by = "transcript_id_clean", all.y = TRUE)
+tx.table.out$transcript_id_clean <- NULL
+tx.table.out <- tx.table.out[, c("transcript_id", "gene_id", "gene_name", nombres)]
+
+write.table(tx.table.out,
+            file      = "txExprTable.tsv",
+            sep       = "\t",
+            quote     = FALSE,
+            col.names = TRUE,
+            row.names = FALSE)
 
 write.table(table.out,
             file      = "txiAbundance.tsv",
