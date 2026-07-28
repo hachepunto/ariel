@@ -57,7 +57,7 @@ hallazgos_fusiones <- fusiones_otras |>
     # Cicero medal filter: only applies when cicero called the fusion
     !grepl("cicero", Metodos, ignore.case = TRUE) | (Cicero_medal > 2),
     # Arriba confidence filter: only applies when arriba is the sole caller
-    Metodos != "Arriba" | !grepl("^low$", coalesce(Arriba_confidence, ""), ignore.case = TRUE),
+    !grepl("^arriba$", Metodos, ignore.case = TRUE) | !grepl("^low$", coalesce(Arriba_confidence, ""), ignore.case = TRUE),
     # Remove fusions where any database annotates them as fully overlapping genes
     !grepl("fully_overlapping", coalesce(annotations, ""), ignore.case = TRUE)
   ) |>
