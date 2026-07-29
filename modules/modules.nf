@@ -29,6 +29,11 @@ process FusionSummary {
    *   - hallazgos_otros.csv:
    *       Muestra, Fusion, Metodos, Subtipo, Subtipo_Emergente, CRLF2_expr,
    *       SNV_RaScALL, Deleciones_Focales_Rascall, DUX4r_Rascall, Duplicacion_CRLF2
+   *
+   *   - reporteExtenso.csv:
+   *       Una fila por fusion (sin colapsar por muestra), con todas las columnas
+   *       de bp_consensus/RaScALL disponibles y una columna Categoria que indica
+   *       si la fusion quedo en hallazgos_principales o en hallazgos_otros.
    */
   cache 'lenient'
   container 'acerverat/ariel-env:latest'
@@ -42,6 +47,7 @@ process FusionSummary {
 
   output:
     file ('hallazgos_*.csv')
+    file ('reporteExtenso.csv')
 
   script:
   """

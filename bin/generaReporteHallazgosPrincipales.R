@@ -233,7 +233,19 @@ fusiones_otras <- hallazgos_annotated |>
     annotations
   )
 
+# reporteExtenso: una fila por fusion (sin colapsar por muestra), con todas las
+# columnas disponibles de bp_consensus/RaScALL. Aqui se escriben las fusiones
+# que entraron a hallazgos_principales; generaReporteHallazgosOtros.R lee este
+# mismo archivo y le agrega las que entraron a hallazgos_otros.
+reporteExtenso <- hallazgos_annotated |>
+  filter(es_principal) |>
+  mutate(Categoria = "Principal") |>
+  select(-es_principal) |>
+  rename(Muestra = Sample, Fusion = FusionName, Metodos = Methods_list, Punto_de_corte = best_bp) |>
+  relocate(Muestra, Fusion, Categoria)
+
 write.table(hallazgos_principales, "hallazgos_principales.csv", sep = "\t", row.names = FALSE, quote = FALSE)
 write.table(fusiones_otras,        "fusiones_otras.csv",        sep = "\t", row.names = FALSE, quote = FALSE)
 write.table(Rascall.data,          "rascall_data.csv",          sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(reporteExtenso,        "reporteExtenso.csv",        sep = "\t", row.names = FALSE, quote = FALSE)
 

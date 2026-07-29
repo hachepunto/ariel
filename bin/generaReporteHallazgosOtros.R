@@ -47,7 +47,7 @@ hallazgos_crlf2 <- c(
 #   3. No NAs in either gene of the fusion name
 #   4. If only called by arriba, confidence must not be "low"
 
-hallazgos_fusiones <- fusiones_otras |>
+hallazgos_fusiones_full <- fusiones_otras |>
   filter(
     # No NA gene names (string "NA" or actual NA)
     !is.na(Fusion),
@@ -60,7 +60,9 @@ hallazgos_fusiones <- fusiones_otras |>
     !grepl("^arriba$", Metodos, ignore.case = TRUE) | !grepl("^low$", coalesce(Arriba_confidence, ""), ignore.case = TRUE),
     # Remove fusions where any database annotates them as fully overlapping genes
     !grepl("fully_overlapping", coalesce(annotations, ""), ignore.case = TRUE)
-  ) |>
+  )
+
+hallazgos_fusiones <- hallazgos_fusiones_full |>
   select(-Supporting_reads, -Cicero_medal, -Arriba_confidence, -annotations) |>
   mutate(
     # Merge subtype columns: combine when both are informative, otherwise keep whichever has a value
@@ -121,4 +123,19 @@ hallazgos_otros <- hallazgos_otros |>
   mutate(across(everything(), ~replace_na(as.character(.), "-")))
 
 write.table(hallazgos_otros, "hallazgos_otros.csv", sep = "\t", row.names = FALSE, quote = FALSE)
+
+###### Extend reporteExtenso (escrito por generaReporteHallazgosPrincipales.R)
+# con las fusiones que entraron a hallazgos_otros, y reordenar para que las
+# fusiones de una misma muestra queden juntas (Principal antes que Otro).
+
+reporteExtenso_otro <- hallazgos_fusiones_full |>
+  mutate(Categoria = "Otro") |>
+  relocate(Muestra, Fusion, Categoria)
+
+reporteExtenso_principal <- read.table("reporteExtenso.csv", header = TRUE, sep = "\t", na.strings = "NA")
+
+reporteExtenso <- bind_rows(reporteExtenso_principal, reporteExtenso_otro) |>
+  arrange(Muestra, factor(Categoria, levels = c("Principal", "Otro")))
+
+write.table(reporteExtenso, "reporteExtenso.csv", sep = "\t", row.names = FALSE, quote = FALSE)
 
