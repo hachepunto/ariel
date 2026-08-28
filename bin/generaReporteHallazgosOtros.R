@@ -11,7 +11,11 @@ args <- commandArgs(trailingOnly = TRUE)
 ###### Read inputs
 
 message("Reading ", args[1])
-fusiones_otras <- read.table(args[1], header = TRUE, sep = "\t", na.strings = "NA")
+fusiones_otras <- read.table(args[1], header = TRUE, sep = "\t", na.strings = "NA",
+                              colClasses = c(SR_Arriba = "character",
+                                             SR_Cicero = "character",
+                                             SR_Fusioncatcher = "character",
+                                             Punto_de_corte = "character"))
 
 message("Reading ", args[2])
 rascall_data <- read.table(args[2], header = TRUE, sep = "\t", na.strings = "NA")
@@ -132,7 +136,11 @@ reporteExtenso_otro <- hallazgos_fusiones_full |>
   mutate(Categoria = "Otro") |>
   relocate(Muestra, Fusion, Categoria)
 
-reporteExtenso_principal <- read.table("reporteExtenso.csv", header = TRUE, sep = "\t", na.strings = "NA")
+reporteExtenso_principal <- read.table("reporteExtenso.csv", header = TRUE, sep = "\t", na.strings = "NA",
+                                        colClasses = c(SR_Arriba = "character",
+                                                       SR_Cicero = "character",
+                                                       SR_Fusioncatcher = "character",
+                                                       Punto_de_corte = "character"))
 
 reporteExtenso <- bind_rows(reporteExtenso_principal, reporteExtenso_otro) |>
   arrange(Muestra, factor(Categoria, levels = c("Principal", "Otro")))
