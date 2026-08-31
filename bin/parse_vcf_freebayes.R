@@ -121,7 +121,9 @@ parse_vcf <- function(vcf_file, mane_set) {
       row$INFO,
       regexpr("(?<=CLNSIG=)[^;]+", row$INFO, perl = TRUE)
     )
-    if (!length(clnsig_match) || !(clnsig_match %in% clnsig_allowed)) return(NULL)
+    if (!length(clnsig_match)) return(NULL)
+    clnsig_terms <- strsplit(clnsig_match, "[/|]")[[1]]
+    if (!any(clnsig_terms %in% clnsig_allowed)) return(NULL)
     clnsig_val <- clnsig_match
 
     ro     <- suppressWarnings(as.numeric(fmt["RO"]))
@@ -143,6 +145,7 @@ parse_vcf <- function(vcf_file, mane_set) {
     if (is.null(df) || !nrow(df)) return(NULL)
 
     df$muestra       <- sample_name
+    df$posicion      <- paste0(row$CHROM, ":", row$POS)
     df$clasificacion <- clnsig_val
     df
   })
@@ -157,14 +160,15 @@ result   <- parse_vcf(vcf_file, mane_set)
 
 empty_df <- data.frame(
   muestra = character(), gen = character(), mutacion = character(),
-  proteina = character(), VAF_pct = numeric(), clasificacion = character()
+  proteina = character(), VAF_pct = numeric(), posicion = character(),
+  clasificacion = character()
 )
 
 if (is.null(result) || !nrow(result)) {
   message("No se encontraron variantes MANE Select con clasificacion ClinVar.")
   write.table(empty_df, output_file, sep = "\t", row.names = FALSE, quote = FALSE)
 } else {
-  result <- unique(result[, c("muestra", "gen", "mutacion", "proteina", "VAF_pct", "clasificacion")])
+  result <- unique(result[, c("muestra", "gen", "mutacion", "proteina", "VAF_pct", "posicion", "clasificacion")])
   write.table(result, output_file, sep = "\t", row.names = FALSE, quote = FALSE)
   message("\nListo. ", nrow(result), " filas exportadas a:\n  ", output_file)
 }
