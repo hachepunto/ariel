@@ -28,7 +28,7 @@ load_mane_select <- function(mane_file) {
 
 
 # Parsea el campo ANN y devuelve un data.frame con una fila por transcripto MANE Select
-parse_ann <- function(ann_string, alt_alleles, ao_vals, ro, mane_set) {
+parse_ann <- function(ann_string, alt_alleles, ao_vals, ro, mane_set, chrom, pos, ref) {
 
   allele_to_ao <- setNames(ao_vals, alt_alleles)
 
@@ -59,6 +59,7 @@ parse_ann <- function(ann_string, alt_alleles, ao_vals, ro, mane_set) {
       mutacion = paste0(transcript, ":", hgvs_c),
       proteina = hgvs_p,
       VAF_pct  = vaf,
+      posicion = paste(paste0(chrom, ":", pos), ref, allele, sep = "_"),
       stringsAsFactors = FALSE
     )
   })
@@ -141,11 +142,10 @@ parse_vcf <- function(vcf_file, mane_set) {
 
     alt_alleles <- strsplit(as.character(row$ALT), ",")[[1]]
 
-    df <- parse_ann(ann_match, alt_alleles, ao_vals, ro, mane_set)
+    df <- parse_ann(ann_match, alt_alleles, ao_vals, ro, mane_set, row$CHROM, row$POS, row$REF)
     if (is.null(df) || !nrow(df)) return(NULL)
 
     df$muestra       <- sample_name
-    df$posicion      <- paste0(row$CHROM, ":", row$POS)
     df$clasificacion <- clnsig_val
     df
   })
