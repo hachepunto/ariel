@@ -27,7 +27,7 @@ process FusionSummary {
    */
   cache 'lenient'
   container 'acerverat/ariel-env:latest'
-  publishDir params.resultsDir+"/reportes", mode: 'copy'
+  publishDir params.resultsDir+"/reportes", mode: params.publishMode
 
   input:
     path SampleSheet
@@ -70,7 +70,7 @@ process Rascall {
   *
   */
   cache 'lenient'
-  publishDir params.resultsDir+"/rascall", mode: 'copy'
+  publishDir params.resultsDir+"/rascall", mode: params.publishMode
 
   input:
   tuple val(sample), file(R1), file(R2)
@@ -148,8 +148,8 @@ process Fungi {
   *
   */
   cache 'lenient'
-  publishDir params.resultsDir+"/fungi", mode: 'copy'
-  publishDir params.resultsDir+"/fusions", mode: 'copy', pattern: 'input-list.txt'
+  publishDir params.resultsDir+"/fungi", mode: params.publishMode
+  publishDir params.resultsDir+"/fusions", mode: params.publishMode, pattern: 'input-list.txt'
 
   input:
     val fusionList
@@ -208,7 +208,7 @@ process Salmon {
    */
   cache 'lenient'
   container 'acerverat/ariel-env:latest'
-  publishDir params.resultsDir+"/quantification", mode: 'copy'
+  publishDir params.resultsDir+"/quantification", mode: params.publishMode
 
   input:
     path referenceDir
@@ -226,7 +226,7 @@ process Salmon {
     salmon quant -i \${transcriptome_idx} -l A \
                  -1 ${R1} \
                  -2 ${R2} \
-                 -p 4 --validateMappings -o \$PWD/${sample}_quant
+                 -p ${task.cpus} --validateMappings -o \$PWD/${sample}_quant
               
       # copia los resultados al directorio de trabajo
       cp \$PWD/${sample}_quant/quant.sf \$PWD/${sample}.quant.sf
@@ -256,7 +256,7 @@ process STAR_aligner {
    */
   cache 'lenient'
   container 'acerverat/ariel-env:latest'
-  publishDir params.resultsDir+"/alignments", mode: 'copy'
+  publishDir params.resultsDir+"/alignments", mode: params.publishMode
   beforeScript 'chmod o+rw .'
 
   input:
@@ -332,7 +332,7 @@ process Arriba {
    */
   cache 'lenient'
   container 'acerverat/ariel-env:latest'
-  publishDir params.resultsDir + "/fusions/arriba", mode: 'copy'
+  publishDir params.resultsDir + "/fusions/arriba", mode: params.publishMode
 
   input:
     path referenceDir
@@ -399,7 +399,7 @@ process RNApeg {
    */
 
   cache 'lenient'
-  publishDir params.resultsDir+"/junction", mode: 'copy'
+  publishDir params.resultsDir+"/junction", mode: params.publishMode
   input:
     path(referenceDir)
     tuple val(sample), file(bamfile), file(bai)
@@ -423,7 +423,7 @@ process RNApeg {
                 --mount type=bind,source=\${outdir},target=/results \
                 -v "\${refdir}":/references \
                 -v "\${bamdir}":/data \
-                ghcr.io/stjude/rnapeg \
+                ${params.rnapegImage} \
                     -b /data/\${bam} \
                     -f /references/cicero_references/Homo_sapiens/GRCh38_no_alt/FASTA/GRCh38_no_alt.fa \
                     -r /references/cicero_references/Homo_sapiens/GRCh38_no_alt/mRNA/RefSeq/refFlat.txt
@@ -459,7 +459,7 @@ process Cicero {
    *
    */
   cache 'lenient'
-  publishDir params.resultsDir+"/fusions/cicero", mode: 'copy'
+  publishDir params.resultsDir+"/fusions/cicero", mode: params.publishMode
 
   input:
     path(referenceDir)
@@ -494,13 +494,13 @@ process Cicero {
     docker run -u \$(id -u):\$(id -g) --rm \
                 --mount type=bind,source=\${outdir},target=/cicero \
                 -v "\${refdir}":/references \
-                ghcr.io/stjude/cicero:latest Cicero.sh \
+                ${params.ciceroImage} Cicero.sh \
                        -b /cicero/inputs/\${bam} \
                        -r /references/cicero_references \
                        -g GRCh38_no_alt \
                        -o /cicero/results/${sample} \
                        -j /cicero/inputs/\${junctions} \
-                       -no-optimize -n 2
+                       -no-optimize -n ${task.cpus}
 
     # copia los resultados al directorio de trabajo
     cp results/${sample}/CICERO_DATADIR/*/final_fusions.txt \$PWD/${sample}_final_fusions.txt
@@ -537,7 +537,7 @@ process FusionCatcher {
    */
   cache 'lenient'
   container 'acerverat/ariel-env:latest'
-  publishDir params.resultsDir+"/fusions/fusioncatcher", mode: 'copy'
+  publishDir params.resultsDir+"/fusions/fusioncatcher", mode: params.publishMode
 
   input:
     path referenceDir
@@ -560,7 +560,8 @@ process FusionCatcher {
     /opt/fusioncatcher/bin/fusioncatcher.py \
       -d \$PWD/${referenceDir}/fusioncatcher_db/current \
       -i \$PWD/input \
-      -o \$PWD/${sample}_output
+      -o \$PWD/${sample}_output \
+      -p ${task.cpus}
 
     # Los resultados se guardan con el nombre de la muestra al inicio
     cp \$PWD/${sample}_output/final-list_candidate-fusion-genes.txt \$PWD/${sample}_final-list_candidate-fusion-genes.txt
@@ -587,7 +588,7 @@ process FastQC {
    */
   cache 'lenient'
   container 'acerverat/ariel-env:latest'
-  publishDir params.resultsDir + "/qc", mode: 'copy'
+  publishDir params.resultsDir + "/qc", mode: params.publishMode
 
   input:
     tuple val(sample), file(R1), file(R2)
@@ -625,8 +626,8 @@ process Fastp {
    */
   cache 'lenient'
   container 'acerverat/ariel-env:latest'
-  publishDir params.resultsDir + "/qc/trimmed", mode: 'copy', pattern: "*.fq.gz"
-  publishDir params.resultsDir + "/qc/afterTrimm", mode: 'copy', pattern: "*.{html,json}"
+  publishDir params.resultsDir + "/qc/trimmed", mode: params.publishMode, pattern: "*.fq.gz"
+  publishDir params.resultsDir + "/qc/afterTrimm", mode: params.publishMode, pattern: "*.{html,json}"
 
   input:
     tuple val(sample), file(R1), file(R2)
@@ -641,6 +642,7 @@ process Fastp {
     fastp \
       -i ${R1} -I ${R2} \
       -o R1_${sample}_fastp.fq.gz -O R2_${sample}_fastp.fq.gz \
+      -w ${task.cpus} \
       -h ${sample}_fastp.html -j ${sample}_fastp.json
   """
 }
@@ -667,7 +669,7 @@ process FreeBayes {
    */
   cache 'lenient'
   container 'acerverat/ariel-env:latest'
-  publishDir params.resultsDir + "/variants/freebayes", mode: 'copy'
+  publishDir params.resultsDir + "/variants/freebayes", mode: params.publishMode
 
   input:
     path referenceDir
@@ -712,7 +714,7 @@ process SnpEff {
   cache 'lenient'
   container 'acerverat/ariel-env:latest'
   containerOptions "-v ${file(params.referenceDir).toAbsolutePath()}/snpeff_db:/snpeff_data"
-  publishDir params.resultsDir + "/variants/snpeff", mode: 'copy'
+  publishDir params.resultsDir + "/variants/snpeff", mode: params.publishMode
 
   input:
     tuple val(sample), path(vcf)
@@ -764,7 +766,7 @@ process ParseVCF {
    */
   cache 'lenient'
   container 'acerverat/ariel-env:latest'
-  publishDir params.resultsDir + "/reportes", mode: 'copy'
+  publishDir params.resultsDir + "/reportes", mode: params.publishMode
 
   input:
     path mane_select
@@ -796,7 +798,7 @@ process MultiQC {
    */
   cache 'lenient'
   container 'acerverat/ariel-env:latest'
-  publishDir { outdir }, mode: 'copy'
+  publishDir { outdir }, mode: params.publishMode
 
   input:
     path qc_files

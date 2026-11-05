@@ -16,8 +16,8 @@ echo "[gencode] Descargando anotaciones Gencode v42..."
 mkdir -p "$outdir"
 cd "$outdir"
 
-wget -c https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_42/gencode.v42.annotation.gtf.gz
-wget -c https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_42/gencode.v42.annotation.gff3.gz
+wget -c ${GENCODE_PROTO:-https}://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_42/gencode.v42.annotation.gtf.gz
+wget -c ${GENCODE_PROTO:-https}://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_42/gencode.v42.annotation.gff3.gz
 
 gunzip -f gencode.v42.annotation.gtf.gz
 gunzip -f gencode.v42.annotation.gff3.gz

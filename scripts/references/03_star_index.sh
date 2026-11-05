@@ -38,6 +38,6 @@ docker run -u $(id -u):$(id -g) --rm \
     --genomeDir STAR_2.7.10b_index \
     --genomeFastaFiles "$fasta" \
     --sjdbGTFfile "$gtf" \
-    --runThreadN 4
+    --runThreadN ${STAR_THREADS:-4}
 
 echo "[star_index] Listo."
