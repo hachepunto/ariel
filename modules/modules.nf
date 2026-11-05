@@ -103,11 +103,11 @@ process Rascall {
                acerverat/rascall:1.0 \
     -c "ln -sf /data/\${r1} /opt/rascall/output/${sample}/${sample}_R1.fastq.gz;
         ln -sf /data/\${r2} /opt/rascall/output/${sample}/${sample}_R2.fastq.gz;
-        bash /RaScALL/run_km.sh /opt/rascall/output/${sample}/${sample}_R1.fastq.gz /opt/rascall/output/${sample}/${sample}_R2.fastq.gz ${params.threadsRascall} /RaScALL/ALL_targets/DUX4;
-        bash /RaScALL/run_km.sh /opt/rascall/output/${sample}/${sample}_R1.fastq.gz /opt/rascall/output/${sample}/${sample}_R2.fastq.gz ${params.threadsRascall} /RaScALL/ALL_targets/Fusion;
-        bash /RaScALL/run_km.sh /opt/rascall/output/${sample}/${sample}_R1.fastq.gz /opt/rascall/output/${sample}/${sample}_R2.fastq.gz ${params.threadsRascall} /RaScALL/ALL_targets/IGH_fusion;
-        bash /RaScALL/run_km.sh /opt/rascall/output/${sample}/${sample}_R1.fastq.gz /opt/rascall/output/${sample}/${sample}_R2.fastq.gz ${params.threadsRascall} /RaScALL/ALL_targets/SNV;
-        bash /RaScALL/run_km.sh /opt/rascall/output/${sample}/${sample}_R1.fastq.gz /opt/rascall/output/${sample}/${sample}_R2.fastq.gz ${params.threadsRascall} /RaScALL/ALL_targets/focal_deletions;
+        bash /RaScALL/run_km.sh /opt/rascall/output/${sample}/${sample}_R1.fastq.gz /opt/rascall/output/${sample}/${sample}_R2.fastq.gz ${task.cpus} /RaScALL/ALL_targets/DUX4;
+        bash /RaScALL/run_km.sh /opt/rascall/output/${sample}/${sample}_R1.fastq.gz /opt/rascall/output/${sample}/${sample}_R2.fastq.gz ${task.cpus} /RaScALL/ALL_targets/Fusion;
+        bash /RaScALL/run_km.sh /opt/rascall/output/${sample}/${sample}_R1.fastq.gz /opt/rascall/output/${sample}/${sample}_R2.fastq.gz ${task.cpus} /RaScALL/ALL_targets/IGH_fusion;
+        bash /RaScALL/run_km.sh /opt/rascall/output/${sample}/${sample}_R1.fastq.gz /opt/rascall/output/${sample}/${sample}_R2.fastq.gz ${task.cpus} /RaScALL/ALL_targets/SNV;
+        bash /RaScALL/run_km.sh /opt/rascall/output/${sample}/${sample}_R1.fastq.gz /opt/rascall/output/${sample}/${sample}_R2.fastq.gz ${task.cpus} /RaScALL/ALL_targets/focal_deletions;
         Rscript /RaScALL/bin/filter_km_output.R /opt/rascall/output/${sample}"
   """
 }
@@ -181,7 +181,7 @@ FUNGI_CFG
         -v \${fcdb}:/opt/fusioncatcher/data \
         acerverat/ariel-env:latest \
         bash -c "set -e
-        fungi-fusion-analyzer -c \${config} -o \${outdir}/fungi_output --input-list \${outdir}/input-list.txt --threads ${params.threadsFungi} annotate --filter-ensembl '${params.fungiFilterEnsembl}' --filter-db '${params.fungiFilterDb}' --filter-min-count ${params.fungiFilterMinCount}
+        fungi-fusion-analyzer -c \${config} -o \${outdir}/fungi_output --input-list \${outdir}/input-list.txt --threads ${task.cpus} annotate --filter-ensembl '${params.fungiFilterEnsembl}' --filter-db '${params.fungiFilterDb}' --filter-min-count ${params.fungiFilterMinCount}
         fungi-fusion-consensus -o \${outdir}/fungi_output/consensus --fungi_annotated \${outdir}/fungi_output/annotated"
     """
 }
@@ -282,7 +282,7 @@ process STAR_aligner {
     # Corre STAR en modo alineamiento
     STAR --runMode alignReads \
        --genomeDir  \${genome_idx} \
-       --runThreadN ${threadsSTAR} \
+       --runThreadN ${task.cpus} \
        --readFilesIn ${R1} ${R2} \
        --outFileNamePrefix ${sample}"_" \
        --outReadsUnmapped None \
@@ -291,7 +291,8 @@ process STAR_aligner {
        --readFilesCommand "gunzip -c" \
        --outSAMunmapped Within \
        --outSAMtype BAM SortedByCoordinate \
-       --outBAMcompression 0 \
+       --outBAMcompression 1 \
+       --limitBAMsortRAM 30000000000 \
        --outTmpDir ./tmp_star_${sample} \
        --outSAMattributes NH HI NM MD AS nM jM jI XS \
        --chimSegmentMin 20 \
@@ -478,13 +479,13 @@ process Cicero {
     # results se utiliza para guardar los resultados de cicero
     mkdir results
 
-    # los archivos bam, bai y junctions se copian a /inputs
+    # los archivos bam, bai y junctions se enlazan (enlace duro) en /inputs; si no se puede, se copian
     bam=\$( basename ${bamfile} )
-    cp -L \${bam} inputs/
-    cp -L ${bai} inputs/
+    for f in ${bamfile} ${bai} ${junctions}; do
+      ln -f "\$( readlink -f \$f )" inputs/\$( basename \$f ) 2>/dev/null || cp -L \$f inputs/
+    done
 
     junctions=\$( basename ${junctions} )
-    cp -L \${junctions} inputs/
 
     # se generan variables con las rutas del directorio de referencia y el directorio de trabajo
     refdir=\$( readlink ${referenceDir} )

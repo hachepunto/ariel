@@ -95,9 +95,11 @@ workflow {
   /* Genera un canal con los resultados de los reportes de fusiones de FusionCatcher, 
    * Arriba y Cicero. No avanza hasta que se obtienen todos los reportes.
    */
+  // Se ordena por muestra y metodo para que el hash de Fungi sea estable y -resume lo reutilice
   fusions_ch = Cicero.out.fusions
                      .concat(Arriba.out.fusions, FusionCatcher.out.fusions)
-                     .collect()
+                     .toSortedList { a, b -> "${a[0]}\t${a[1]}" <=> "${b[0]}\t${b[1]}" }
+                     .map { l -> l.flatten() }
 
   // Fungi genera el input-list.txt, analiza y genera un consenso de las fusiones.
   Fungi(fusions_ch)
